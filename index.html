@@ -774,8 +774,8 @@ Reglas:
   }), {root:cajonLista, rootMargin:'200px'});
 
   function misApps(){
-    if (!Array.isArray(config.apps)) { config.apps = JSON.parse(NATIVA.appsSugeridas()); persist(CONF, config); }
-    return config.apps;
+    if (!Array.isArray(config.appsPanel)) { config.appsPanel = JSON.parse(NATIVA.appsSugeridas()); persist(CONF, config); }
+    return config.appsPanel;
   }
   function renderCajon(){
     $('cajonEditar').textContent = editando ? 'Listo' : 'Editar';
@@ -809,7 +809,7 @@ Reglas:
     cajonLista.addEventListener('change', e => {
       const c = e.target.closest('input[data-paquete]'); if (!c) return;
       const p = c.dataset.paquete;
-      config.apps = c.checked ? [...misApps(), p] : misApps().filter(x => x !== p);
+      config.appsPanel = c.checked ? [...misApps(), p] : misApps().filter(x => x !== p);
       persist(CONF, config);
     });
     cajonLista.addEventListener('click', e => {
