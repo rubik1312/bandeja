@@ -181,7 +181,32 @@
           <option value="baja">Baja (menos falsas alarmas)</option>
         </select>
       </div>
+      <div id="jarvisOpciones" hidden>
+        <div class="row" style="margin-top:8px;align-items:center">
+          <label for="jarvisModo" style="margin:0">Al decir “Oye Jarvis”</label>
+          <select id="jarvisModo">
+            <option value="guardar">Guardar sin abrir la app</option>
+            <option value="abrir">Abrir la app para dictar</option>
+          </select>
+        </div>
+        <div class="row" style="margin-top:8px;align-items:center">
+          <label for="jarvisRespuesta" style="margin:0">Confirmación</label>
+          <select id="jarvisRespuesta">
+            <option value="notificacion">Notificación y vibración</option>
+            <option value="voz">Jarvis responde hablando</option>
+          </select>
+        </div>
+      </div>
       <div class="small" id="jarvisInfo" style="margin-top:6px"></div>
+    </div>
+    <div class="field" id="esperaBox" hidden>
+      <label for="espera">Espera al dictar</label>
+      <select id="espera">
+        <option value="2">2 segundos de silencio</option>
+        <option value="3">3 segundos de silencio</option>
+        <option value="5">5 segundos de silencio</option>
+      </select>
+      <div class="small" style="margin-top:6px">Cuánto espera callado antes de guardar. Para terminar antes, di “eso es todo” o toca el micrófono.</div>
     </div>
     <div class="row" style="justify-content:flex-end;margin-top:6px">
       <button class="btn" value="cancel">Cerrar</button>
@@ -280,7 +305,8 @@ Reglas:
       if (target) {
         target.titulo = String(json.titulo || '').slice(0, 120);
         target.resumen = String(json.resumen || '');
-        target.categoria = CATS.some(c => c.id === json.categoria) ? json.categoria : 'otro';
+        // Si la sección se dijo por voz ("guarda en trabajo…"), manda esa y no la que proponga Claude.
+        if (!target.categoriaFija) target.categoria = CATS.some(c => c.id === json.categoria) ? json.categoria : 'otro';
         target.tipo = TIPOS[json.tipo] ? json.tipo : 'idea';
         target.etiquetas = Array.isArray(json.etiquetas) ? json.etiquetas.slice(0, 3).map(String) : [];
         target.clasificada = true;
@@ -319,6 +345,26 @@ Reglas:
   // Dentro de la app Android, window.BandejaNativa da la voz del teléfono (el WebView no trae la del navegador).
   const NATIVA = window.BandejaNativa || null;
   const VOZ_NATIVA = !!(NATIVA && NATIVA.disponible());
+  // Ideas que Jarvis guardó por voz con la app cerrada ("Oye Jarvis, guarda en trabajo…").
+  function sincronizarNativas(){
+    if (!NATIVA || !NATIVA.tomarIdeas) return;
+    let nuevas = [], borrar = [];
+    try { nuevas = JSON.parse(NATIVA.tomarIdeas() || '[]'); borrar = JSON.parse(NATIVA.tomarBorrados() || '[]'); } catch { return; }
+    if (!nuevas.length && !borrar.length) return;
+    const known = new Set(ideas.map(i => i.id));
+    const agregadas = nuevas.filter(n => n && n.id && n.texto && !known.has(n.id)).map(n => ({
+      id:n.id, texto:n.texto, creada:n.creada || new Date().toISOString(),
+      categoria: CATS.some(c => c.id === n.categoria) ? n.categoria : 'otro', categoriaFija: !!n.categoria,
+      tipo:'idea', etiquetas:[], hecha:false, clasificada:false, origen:'voz'
+    }));
+    ideas = [...agregadas, ...ideas.filter(i => !borrar.includes(i.id))].sort((a, b) => b.creada.localeCompare(a.creada));
+    saveIdeas(); render();
+    if (agregadas.length) toast(agregadas.length === 1 ? 'Llegó 1 idea dictada a Jarvis' : agregadas.length + ' ideas dictadas a Jarvis');
+    agregadas.forEach(i => classify(i));
+  }
+  window.bandejaNuevasIdeas = sincronizarNativas;
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) sincronizarNativas(); });
+
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let rec = null, recording = false, recError = false, baseText = '';
   // modoVoz: se abrió con "Dictar idea" o el botón lateral, así que guarda sola al terminar de hablar.
@@ -545,13 +591,18 @@ Reglas:
     $('jarvisPausa').textContent = e.pausado ? 'Reanudar' : 'Pausar';
     $('jarvisSensBox').hidden = !conPausa;
     if (e.sensibilidad) $('jarvisSens').value = e.sensibilidad;
+    const conComandos = e.modo !== undefined; // desde la v7 de la app
+    $('jarvisOpciones').hidden = !conComandos;
+    $('esperaBox').hidden = !conComandos;
+    if (conComandos) { $('jarvisModo').value = e.modo; $('jarvisRespuesta').value = e.respuesta; $('espera').value = String(e.espera); }
     $('jarvisEncima').hidden = !e.activo || e.encima;
     $('jarvisBateria').hidden = !e.activo || e.bateria;
     $('jarvisInfo').textContent =
         e.error ? 'No pude activar Jarvis: ' + e.error
       : e.activo && e.pausado ? 'En pausa: no usa el micrófono. También lo puedes pausar desde el botón “Jarvis” del panel de notificaciones.'
       : e.escuchando && !e.encima ? 'Escuchando. Permite “abrir encima” para que la app se abra sola al oírte.'
-      : e.escuchando ? 'Escuchando. Di “Oye Jarvis” (con la J en inglés, “yarvis”) en cualquier momento.'
+      : e.escuchando && e.modo === 'guardar' ? 'Escuchando. Di “Oye Jarvis”, espera la vibración y dicta, por ejemplo: “guarda en trabajo revisar el sorter”.'
+      : e.escuchando ? 'Escuchando. Di “Oye Jarvis” en cualquier momento.'
       : e.activo ? 'Activando…'
       : e.motor === 'oww' ? 'Di “Oye Jarvis” y la app se abre lista para dictar. Todo se procesa en tu teléfono.'
       : 'Di “Oye Jarvis” y la app se abre lista para dictar. Necesita una AccessKey gratis de console.picovoice.ai.';
@@ -570,6 +621,9 @@ Reglas:
       $('jarvisKey').value = '';
     });
     $('jarvisPausa').addEventListener('click', () => NATIVA.pausarJarvis(!jarvisEstado().pausado));
+    $('jarvisModo').addEventListener('change', e => NATIVA.configurarJarvis('modo', e.target.value));
+    $('jarvisRespuesta').addEventListener('change', e => NATIVA.configurarJarvis('respuesta', e.target.value));
+    $('espera').addEventListener('change', e => { NATIVA.configurarJarvis('espera', e.target.value); toast('Espera: ' + e.target.value + ' s'); });
     $('jarvisSens').addEventListener('change', e => { NATIVA.sensibilidadJarvis(e.target.value); toast('Sensibilidad: ' + e.target.value); });
     $('jarvisEncima').addEventListener('click', () => NATIVA.abrirPermisoEncima());
     $('jarvisBateria').addEventListener('click', () => NATIVA.abrirBateria());
@@ -580,6 +634,7 @@ Reglas:
   // ---------- inicio ----------
   applyTheme();
   render();
+  sincronizarNativas();
   classifyPending();
   if (new URLSearchParams(location.search).get('voz') === '1') {
     history.replaceState(null, '', location.pathname); // que recargar no vuelva a abrir el micrófono
