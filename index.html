@@ -80,6 +80,20 @@
     padding:7px 13px;font:inherit;font-size:14px;cursor:pointer
   }
   .chip[aria-pressed="true"]{background:var(--text);color:var(--bg);border-color:var(--text)}
+  /* Próximo: discreto a propósito, sin tarjeta ni color */
+  .proximo{margin:0 0 2px;font-size:13px;color:var(--muted)}
+  .prox-cab,.prox-fila{
+    display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:4px 0;border:0;background:none;
+    color:inherit;font:inherit;text-align:left;cursor:pointer;
+  }
+  .prox-cab b{font-weight:600;flex:none}
+  .prox-resumen{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .prox-cab svg{flex:none;transition:transform .15s}
+  .prox-cab[aria-expanded="true"] svg{transform:rotate(180deg)}
+  .prox-cab[aria-expanded="true"] .prox-resumen{visibility:hidden}
+  .prox-fila{align-items:baseline;min-height:36px}
+  .prox-fila time{flex:none;width:92px;font-variant-numeric:tabular-nums}
+  .prox-fila span{flex:1;min-width:0;overflow-wrap:anywhere}
   /* Línea de tiempo: día > hora | riel con punto | contenido */
   .dia-titulo{
     position:sticky;top:0;z-index:2;background:var(--bg);margin:0 -16px;padding:12px 16px 6px;
@@ -187,6 +201,7 @@
 
   <input class="search" id="search" type="search" placeholder="Buscar en tus ideas" hidden>
   <div class="chips" id="chips"></div>
+  <section class="proximo" id="proximo" aria-label="Próximo en tu calendario" hidden></section>
   <div class="list" id="list"></div>
 </div>
 
@@ -533,6 +548,40 @@ Reglas:
   }
   let abierta = null; // la idea que muestra sus opciones
 
+  // ---------- próximo (eventos del calendario, solo en la app Android) ----------
+  let proximos = [], proximoAbierto = false;
+  function fmtProximo(ev){
+    const d = new Date(ev.inicio), now = new Date();
+    const hora = ev.todoElDia ? '' : ' ' + d.toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit', hourCycle:'h23'});
+    if (!ev.todoElDia && d <= now) return 'Ahora';
+    const man = new Date(now); man.setDate(now.getDate() + 1);
+    if (d.toDateString() === now.toDateString()) return 'Hoy' + hora;
+    if (d.toDateString() === man.toDateString()) return 'Mañana' + hora;
+    return d.toLocaleDateString('es-CL', {weekday:'short', day:'numeric'}).replace(',', '') + hora;
+  }
+  function renderProximo(){
+    const caja = $('proximo');
+    // Se aparta mientras buscas o filtras por sección.
+    caja.hidden = !proximos.length || filter !== 'todas' || !!query;
+    if (caja.hidden) return;
+    // En el resumen manda lo que tiene hora: es lo que no se puede dejar pasar.
+    const primero = proximos.find(e => !e.todoElDia) || proximos[0];
+    const resto = proximos.length - 1;
+    caja.innerHTML = `<button class="prox-cab" data-prox="alternar" aria-expanded="${proximoAbierto}">
+        <b>Próximo</b>
+        <span class="prox-resumen">${esc(fmtProximo(primero))} · ${esc(primero.titulo)}${resto ? ' · +' + resto : ''}</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      ${proximoAbierto ? proximos.map(e => `<button class="prox-fila" data-evento="${esc(e.id)}">
+        <time datetime="${esc(e.inicio)}">${esc(fmtProximo(e))}</time><span>${esc(e.titulo)}</span>
+      </button>`).join('') : ''}`;
+  }
+  function cargarProximos(){
+    if (!NATIVA || !NATIVA.proximosEventos) return;
+    try { proximos = JSON.parse(NATIVA.proximosEventos()); } catch { proximos = []; }
+    renderProximo();
+  }
+
   function renderChips(){
     const opts = [{id:'todas', label:'Todas'}, ...CATS, {id:'hechas', label:'Hechas'}];
     chipsEl.innerHTML = opts.map(o => {
@@ -548,6 +597,7 @@ Reglas:
     const pend = ideas.filter(i => !i.hecha).length;
     countEl.textContent = pend === 1 ? '1 pendiente' : pend + ' pendientes';
     renderChips();
+    renderProximo();
 
     const q = query.toLowerCase();
     const items = ideas.filter(i => {
@@ -824,6 +874,15 @@ Reglas:
       if (e.clientX > r.right) cajon.close();
     });
   }
+  // Próximo: se actualiza al volver a la app (por ejemplo, tras crear un recordatorio con Jarvis).
+  $('proximo').addEventListener('click', e => {
+    if (e.target.closest('[data-prox]')) { proximoAbierto = !proximoAbierto; return renderProximo(); }
+    const fila = e.target.closest('[data-evento]'); if (!fila) return;
+    if (!NATIVA.abrirEvento(Number(fila.dataset.evento))) toast('No pude abrir ese evento');
+  });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) cargarProximos(); });
+  cargarProximos();
+
   // Botón Atrás del teléfono: cierra lo que esté abierto antes de salir.
   window.bandejaAtras = () => {
     const abierto = [cajon, dlg].find(d => d.open);
