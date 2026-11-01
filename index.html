@@ -164,6 +164,16 @@
       <input type="file" id="importFile" accept="application/json" hidden>
       <div class="small" style="margin-top:6px">Las ideas viven en este teléfono. Exporta de vez en cuando para no perderlas.</div>
     </div>
+    <div class="field" id="jarvisBox" hidden>
+      <label for="jarvisKey">“Oye Jarvis”</label>
+      <input id="jarvisKey" type="password" autocomplete="off" placeholder="AccessKey de Picovoice">
+      <div class="row" style="flex-wrap:wrap;margin-top:8px">
+        <button type="button" class="btn" id="jarvisToggle">Activar</button>
+        <button type="button" class="btn" id="jarvisEncima" hidden>Permitir abrir encima</button>
+        <button type="button" class="btn" id="jarvisBateria" hidden>Batería sin restricciones</button>
+      </div>
+      <div class="small" id="jarvisInfo" style="margin-top:6px"></div>
+    </div>
     <div class="row" style="justify-content:flex-end;margin-top:6px">
       <button class="btn" value="cancel">Cerrar</button>
       <button class="btn primary" id="saveSettings" value="ok">Guardar</button>
@@ -514,6 +524,37 @@ Reglas:
     if (!n) return toast('No hay ideas pendientes de ordenar');
     classifyPending(); toast('Ordenando ' + n + (n === 1 ? ' idea' : ' ideas'));
   });
+
+  // "Oye Jarvis" (solo en la app Android): la escucha corre en el teléfono y la clave queda allá, no en la web.
+  function renderJarvis(e){
+    $('jarvisBox').hidden = false;
+    $('jarvisKey').placeholder = e.tieneClave ? 'Clave guardada (escribe otra para cambiarla)' : 'AccessKey de Picovoice';
+    $('jarvisToggle').textContent = e.activo ? 'Desactivar' : 'Activar';
+    $('jarvisEncima').hidden = !e.activo || e.encima;
+    $('jarvisBateria').hidden = !e.activo || e.bateria;
+    $('jarvisInfo').textContent =
+        e.error ? 'No pude activar Jarvis: ' + e.error
+      : e.escuchando && !e.encima ? 'Escuchando. Permite “abrir encima” para que la app se abra sola al oírte.'
+      : e.escuchando ? 'Escuchando. Di “Oye Jarvis” en cualquier momento.'
+      : e.activo ? 'Activando…'
+      : 'Di “Oye Jarvis” y la app se abre lista para dictar. Necesita una AccessKey gratis de console.picovoice.ai.';
+  }
+  window.bandejaJarvis = renderJarvis;
+  const jarvisEstado = () => JSON.parse(NATIVA.jarvisEstado());
+  if (NATIVA && NATIVA.jarvisEstado) {
+    $('openSettings').addEventListener('click', () => { $('jarvisKey').value = ''; renderJarvis(jarvisEstado()); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && dlg.open) renderJarvis(jarvisEstado()); });
+    $('jarvisToggle').addEventListener('click', () => {
+      const e = jarvisEstado(), clave = $('jarvisKey').value.trim();
+      if (e.activo) return NATIVA.desactivarJarvis();
+      if (!clave && !e.tieneClave) return toast('Primero pega tu AccessKey de Picovoice');
+      $('jarvisInfo').textContent = 'Activando…';
+      NATIVA.activarJarvis(clave);
+      $('jarvisKey').value = '';
+    });
+    $('jarvisEncima').addEventListener('click', () => NATIVA.abrirPermisoEncima());
+    $('jarvisBateria').addEventListener('click', () => NATIVA.abrirBateria());
+  }
 
   window.addEventListener('online', classifyPending);
 

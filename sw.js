@@ -1,6 +1,6 @@
 // Guarda la app en caché para que abra sin conexión.
 // Cambia VERSION cada vez que publiques cambios, para que el teléfono baje la nueva versión.
-const VERSION = 'bandeja-v2';
+const VERSION = 'bandeja-v3';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
