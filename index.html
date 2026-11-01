@@ -297,13 +297,45 @@ Reglas:
   }
 
   // ---------- dictado por voz ----------
+  // Dentro de la app Android, window.BandejaNativa da la voz del teléfono (el WebView no trae la del navegador).
+  const NATIVA = window.BandejaNativa || null;
+  const VOZ_NATIVA = !!(NATIVA && NATIVA.disponible());
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let rec = null, recording = false, recError = false, baseText = '';
-  if (!SR) {
+  // modoVoz: se abrió con "Dictar idea" o el botón lateral, así que guarda sola al terminar de hablar.
+  let modoVoz = false;
+  const VOZ_ERRORES = {
+    'not-allowed':'Permite el micrófono para dictar.',
+    'no-speech':'No escuché nada. Intenta de nuevo.',
+    'network':'El dictado necesita conexión.'
+  };
+  if (!SR && !VOZ_NATIVA) {
     micBtn.disabled = true; micBtn.style.opacity = .4;
     hint.textContent = 'Este navegador no permite dictar. Usa Chrome.';
   }
+  function endRec(){
+    recording = false; micBtn.classList.remove('rec');
+    if (!recError) hint.textContent = input.value.trim() ? 'Revisa y guarda.' : 'Toca el micrófono para dictar.';
+    if (modoVoz && !recError && input.value.trim()) { addIdea(); hint.textContent = 'Idea guardada. Toca el micrófono para otra.'; }
+    modoVoz = false;
+  }
+  window.bandejaVoz = (evento, texto) => {
+    if (evento === 'listo') { recording = true; micBtn.classList.add('rec'); hint.textContent = 'Escuchando…'; return; }
+    if (evento === 'parcial' || evento === 'final') {
+      input.value = (baseText + texto).replace(/\s+/g, ' ');
+      updateSaveBtn();
+    }
+    if (evento === 'error') { recError = true; hint.textContent = VOZ_ERRORES[texto] || ('Error de dictado: ' + texto); }
+    if (evento === 'final' || evento === 'error') endRec();
+  };
   function startRec(){
+    if (VOZ_NATIVA) {
+      baseText = input.value ? input.value.trim() + ' ' : '';
+      recError = false;
+      hint.textContent = 'Preparando micrófono…';
+      NATIVA.iniciarVoz();
+      return;
+    }
     rec = new SR();
     rec.lang = 'es-CL';
     rec.continuous = true;
@@ -319,27 +351,28 @@ Reglas:
       updateSaveBtn();
     };
     rec.onerror = e => {
-      const msg = {
-        'not-allowed':'Permite el micrófono para dictar.',
-        'no-speech':'No escuché nada. Intenta de nuevo.',
-        'network':'El dictado necesita conexión.'
-      }[e.error] || ('Error de dictado: ' + e.error);
       recError = true;
-      hint.textContent = msg;
+      hint.textContent = VOZ_ERRORES[e.error] || ('Error de dictado: ' + e.error);
     };
-    rec.onend = () => {
-      recording = false; micBtn.classList.remove('rec');
-      if (!recError) hint.textContent = input.value.trim() ? 'Revisa y guarda.' : 'Toca el micrófono para dictar.';
-    };
+    rec.onend = endRec;
     recError = false;
     rec.start();
     recording = true; micBtn.classList.add('rec'); hint.textContent = 'Escuchando… toca de nuevo para terminar.';
   }
+  function stopRec(){
+    if (VOZ_NATIVA) NATIVA.detenerVoz();
+    else if (rec) rec.stop();
+  }
   micBtn.addEventListener('click', () => {
-    if (!SR) return;
-    if (recording) { rec && rec.stop(); }
+    if (!SR && !VOZ_NATIVA) return;
+    if (recording) stopRec();
     else { try { startRec(); } catch (e) { hint.textContent = 'No se pudo iniciar el dictado.'; } }
   });
+  window.bandejaIniciarVoz = () => {
+    if (recording || (!SR && !VOZ_NATIVA)) return;
+    modoVoz = true;
+    try { startRec(); } catch (e) { modoVoz = false; hint.textContent = 'Toca el micrófono para dictar.'; }
+  };
 
   // ---------- render ----------
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -413,7 +446,7 @@ Reglas:
   // ---------- eventos ----------
   function updateSaveBtn(){ saveBtn.disabled = !input.value.trim(); }
   input.addEventListener('input', updateSaveBtn);
-  saveBtn.addEventListener('click', () => { if (recording && rec) rec.stop(); addIdea(); });
+  saveBtn.addEventListener('click', () => { if (recording) { modoVoz = false; stopRec(); } addIdea(); });
   input.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) addIdea(); });
 
   $('search').addEventListener('input', e => { query = e.target.value; render(); });
@@ -453,10 +486,12 @@ Reglas:
     classifyPending();
   });
   $('exportBtn').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify({exportada:new Date().toISOString(), ideas}, null, 2)], {type:'application/json'});
+    const json = JSON.stringify({exportada:new Date().toISOString(), ideas}, null, 2);
+    const nombre = 'bandeja-ideas-' + new Date().toISOString().slice(0,10) + '.json';
+    if (NATIVA) return NATIVA.guardarArchivo(nombre, json); // el WebView no descarga blobs
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'bandeja-ideas-' + new Date().toISOString().slice(0,10) + '.json';
+    a.href = URL.createObjectURL(new Blob([json], {type:'application/json'}));
+    a.download = nombre;
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });
   $('importBtn').addEventListener('click', () => $('importFile').click());
@@ -486,6 +521,10 @@ Reglas:
   applyTheme();
   render();
   classifyPending();
+  if (new URLSearchParams(location.search).get('voz') === '1') {
+    history.replaceState(null, '', location.pathname); // que recargar no vuelva a abrir el micrófono
+    window.bandejaIniciarVoz();
+  }
 
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     navigator.serviceWorker.register('sw.js').catch(() => {});
