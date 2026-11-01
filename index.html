@@ -601,7 +601,7 @@ Reglas:
         e.error ? 'No pude activar Jarvis: ' + e.error
       : e.activo && e.pausado ? 'En pausa: no usa el micrófono. También lo puedes pausar desde el botón “Jarvis” del panel de notificaciones.'
       : e.escuchando && !e.encima ? 'Escuchando. Permite “abrir encima” para que la app se abra sola al oírte.'
-      : e.escuchando && e.modo === 'guardar' ? 'Escuchando. Di “Oye Jarvis”, espera la vibración y dicta, por ejemplo: “guarda en trabajo revisar el sorter”.'
+      : e.escuchando && e.modo === 'guardar' ? 'Escuchando. Di “Oye Jarvis”, espera la vibración y dicta: “guarda en trabajo revisar el sorter”, “pon una alarma a las 7 de la mañana”, “recuérdame mañana a las 10 llamar al banco”, “temporizador de 10 minutos” o “inicia el cronómetro”.'
       : e.escuchando ? 'Escuchando. Di “Oye Jarvis” en cualquier momento.'
       : e.activo ? 'Activando…'
       : e.motor === 'oww' ? 'Di “Oye Jarvis” y la app se abre lista para dictar. Todo se procesa en tu teléfono.'
