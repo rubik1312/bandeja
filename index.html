@@ -18,39 +18,50 @@
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
       --bg:#14171c; --surface:#1d2128; --surface-2:#262b33; --text:#eceef1; --muted:#9aa1ab;
-      --line:#30363f; --accent:#ff7a3d; --accent-ink:#14171c;
+      --line:#30363f; --accent:#ff7a3d; --accent-ink:#14171c; --c-trabajo:#4dabf7; --c-universidad:#a78bfa; --c-personal:#ff922b; --c-proyectos:#20c997; --c-otro:#adb5bd;
     }
   }
   :root[data-theme="dark"]{
     --bg:#14171c; --surface:#1d2128; --surface-2:#262b33; --text:#eceef1; --muted:#9aa1ab;
-    --line:#30363f; --accent:#ff7a3d; --accent-ink:#14171c;
+    --line:#30363f; --accent:#ff7a3d; --accent-ink:#14171c; --c-trabajo:#4dabf7; --c-universidad:#a78bfa; --c-personal:#ff922b; --c-proyectos:#20c997; --c-otro:#adb5bd;
   }
   *{box-sizing:border-box}
   html,body{margin:0}
   body{
     background:var(--bg); color:var(--text);
     font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-    padding:env(safe-area-inset-top) 0 calc(24px + env(safe-area-inset-bottom));
+    padding:env(safe-area-inset-top) 0 calc(112px + env(safe-area-inset-bottom));
   }
   .wrap{max-width:640px;margin:0 auto;padding:0 16px}
-  header{display:flex;align-items:center;justify-content:space-between;padding:18px 0 10px}
-  h1{font-size:22px;margin:0;letter-spacing:-.01em}
-  .sub{color:var(--muted);font-size:13px;margin-top:2px}
+  header{display:flex;align-items:center;gap:2px;padding:14px 0 6px}
+  header > div:first-child{flex:1;min-width:0}
+  h1{font-size:24px;margin:0;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:13px;margin-top:1px}
   .icon-btn{background:none;border:0;color:var(--text);width:44px;height:44px;border-radius:12px;display:grid;place-items:center;cursor:pointer}
   .icon-btn:active{background:var(--surface-2)}
   .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
-  .capture{padding:14px;margin-bottom:14px}
-  textarea{
-    width:100%;min-height:92px;resize:vertical;border:0;outline:none;background:transparent;color:var(--text);
-    font:inherit;font-size:17px;
+  /* Barra de captura: fija abajo, al alcance del pulgar */
+  .capture{
+    position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--bg);border-top:1px solid var(--line);
+    padding:10px 16px calc(12px + env(safe-area-inset-bottom));
   }
+  .capture-in{max-width:608px;margin:0 auto}
+  .capture .hint{margin:0 0 8px 2px;display:none}
+  .capture .hint.visible{display:block}
+  .composer{display:flex;gap:8px;align-items:flex-end}
+  textarea{
+    flex:1;min-width:0;height:52px;max-height:132px;resize:none;border:1px solid var(--line);border-radius:26px;outline:none;
+    background:var(--surface);color:var(--text);font:inherit;font-size:16px;padding:14px 18px;scrollbar-width:none;
+  }
+  textarea:focus{border-color:var(--muted)}
   textarea::placeholder{color:var(--muted)}
   .row{display:flex;gap:10px;align-items:center}
-  .grow{flex:1}
-  .mic{
-    width:64px;height:64px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);
-    display:grid;place-items:center;cursor:pointer;flex:none;box-shadow:0 4px 14px rgba(0,0,0,.18)
+  .mic,.send{
+    width:52px;height:52px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;flex:none;
   }
+  .mic{background:var(--accent);color:var(--accent-ink)}
+  .send{background:var(--text);color:var(--bg)}
+  .send:disabled{display:none}
   .mic.rec{background:var(--danger);color:#fff;animation:pulse 1.2s infinite}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(201,42,42,.5)}70%{box-shadow:0 0 0 16px rgba(201,42,42,0)}100%{box-shadow:0 0 0 0 rgba(201,42,42,0)}}
   .btn{
@@ -60,30 +71,56 @@
   .btn.primary{background:var(--text);color:var(--bg)}
   .btn:disabled{opacity:.45}
   .hint{color:var(--muted);font-size:13px;min-height:18px}
-  .search{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit}
-  .chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 12px;scrollbar-width:none}
+  .search{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;margin-top:6px}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:8px 16px 10px;margin:0 -16px;scrollbar-width:none}
   .chips::-webkit-scrollbar{display:none}
   .chip{
     flex:none;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;
     padding:7px 13px;font:inherit;font-size:14px;cursor:pointer
   }
   .chip[aria-pressed="true"]{background:var(--text);color:var(--bg);border-color:var(--text)}
-  .list{display:flex;flex-direction:column;gap:10px}
-  .idea{padding:14px}
-  .idea.done{opacity:.55}
-  .idea.done .title{text-decoration:line-through}
-  .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--muted);margin-bottom:6px}
-  .tag{border-radius:999px;padding:2px 9px;font-weight:600;font-size:12px;color:#fff}
-  .tag.soft{background:var(--surface-2);color:var(--muted);font-weight:500}
-  .title{font-weight:650;font-size:16px;margin:0 0 4px}
-  .body{margin:0;color:var(--text);white-space:pre-wrap;word-wrap:break-word}
-  .resumen{margin:6px 0 0;color:var(--muted);font-size:14px}
-  .actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
-  .actions .btn{padding:8px 12px;font-size:14px;font-weight:500}
+  /* Línea de tiempo: día > hora | riel con punto | contenido */
+  .dia-titulo{
+    position:sticky;top:0;z-index:2;background:var(--bg);margin:0 -16px;padding:12px 16px 6px;
+    font-size:13px;font-weight:650;color:var(--muted);
+  }
+  .dia-titulo.hoy{color:var(--text)}
+  .entrada{display:grid;grid-template-columns:44px 28px minmax(0,1fr);cursor:pointer}
+  .hora{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right;padding-top:2px;line-height:21px}
+  .riel{position:relative}
+  .riel::before{content:"";position:absolute;left:13px;top:0;bottom:0;width:2px;background:var(--line)}
+  .entrada:first-child .riel::before{top:12px}
+  .entrada:last-child .riel::before{bottom:auto;height:12px}
+  .entrada:first-child:last-child .riel::before{display:none}
+  .punto{
+    position:absolute;left:-8px;top:-10px;width:44px;height:44px;padding:0;border:0;background:none;cursor:pointer;
+    display:grid;place-items:center;color:var(--cat);
+  }
+  .punto i{
+    display:grid;place-items:center;width:14px;height:14px;border-radius:50%;background:var(--cat);
+    box-shadow:0 0 0 3px var(--bg);color:var(--bg);
+  }
+  .punto svg{display:none}
+  .entrada.done .punto i{width:18px;height:18px}
+  .entrada.done .punto svg{display:block}
+  .contenido{padding:1px 0 18px 2px}
+  .entrada:last-child .contenido{padding-bottom:8px}
+  .title{font-weight:650;font-size:16px;margin:0 0 2px}
+  .body{margin:0;color:var(--text);white-space:pre-wrap;overflow-wrap:anywhere}
+  .title + .body{color:var(--muted);font-size:14px}
+  .resumen{margin:4px 0 0;color:var(--muted);font-size:14px}
+  .entrada.done .title,.entrada.done .body{text-decoration:line-through;color:var(--muted)}
+  .meta{display:flex;flex-wrap:wrap;gap:0 6px;align-items:center;font-size:13px;color:var(--muted);margin-top:3px}
+  .meta .cat{color:var(--cat);font-weight:600}
+  .meta span + span::before{content:"·";margin-right:6px;color:var(--muted);font-weight:400}
+  .actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;cursor:default}
+  .actions .btn{padding:9px 12px;font-size:14px;font-weight:500}
   select{font:inherit;font-size:14px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text)}
   .empty{text-align:center;color:var(--muted);padding:40px 10px}
-  .banner{padding:12px 14px;margin-bottom:14px;font-size:14px}
-  .banner b{display:block;margin-bottom:2px}
+  /* Aviso discreto: no compite con la línea de tiempo */
+  .banner{display:block;width:100%;text-align:left;padding:9px 12px;margin:6px 0 0;font:inherit;font-size:13px;color:var(--muted);cursor:pointer}
+  .banner[hidden]{display:none}
+  .banner b{color:var(--text);font-weight:600}
   dialog{border:0;border-radius:20px;padding:0;width:min(560px,calc(100% - 32px));background:var(--surface);color:var(--text)}
   dialog::backdrop{background:rgba(0,0,0,.45)}
   .sheet{padding:20px}
@@ -93,10 +130,11 @@
   .field input,.field select{width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit}
   .small{font-size:13px;color:var(--muted)}
   .toast{
-    position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(120px);
-    background:var(--text);color:var(--bg);padding:11px 16px;border-radius:12px;font-size:14px;transition:transform .25s;max-width:calc(100% - 32px)
+    position:fixed;z-index:6;left:50%;bottom:calc(88px + env(safe-area-inset-bottom));transform:translateX(-50%);opacity:0;pointer-events:none;
+    background:var(--text);color:var(--bg);padding:11px 16px;border-radius:12px;font-size:14px;transition:opacity .2s;width:max-content;max-width:calc(100% - 32px)
   }
-  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toast.show{opacity:1}
+  @media (prefers-reduced-motion:reduce){.mic.rec,.spin{animation:none}}
   .spin{display:inline-block;width:10px;height:10px;border:2px solid var(--muted);border-top-color:transparent;border-radius:50%;animation:sp .8s linear infinite;vertical-align:-1px}
   @keyframes sp{to{transform:rotate(360deg)}}
 </style>
@@ -105,34 +143,40 @@
 <div class="wrap">
   <header>
     <div>
-      <h1>Bandeja de ideas</h1>
+      <h1>Bandeja</h1>
       <div class="sub" id="count">—</div>
     </div>
+    <button class="icon-btn" id="toggleSearch" aria-label="Buscar en tus ideas" aria-expanded="false">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+    </button>
     <button class="icon-btn" id="openSettings" aria-label="Ajustes">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
   </header>
 
-  <div class="card banner" id="keyBanner" hidden>
-    <b>Falta tu clave de la API de Claude</b>
-    Puedes guardar ideas igual; se ordenarán solas cuando agregues la clave en Ajustes.
-  </div>
+  <button class="card banner" id="keyBanner" hidden>
+    <b>Falta tu clave de Claude.</b> Las ideas se guardan igual, pero sin ordenar. Toca para agregarla.
+  </button>
 
-  <section class="card capture">
-    <textarea id="input" placeholder="¿Qué se te ocurrió? Escribe o toca el micrófono…"></textarea>
-    <div class="row">
-      <button class="mic" id="mic" aria-label="Dictar idea">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
-      </button>
-      <div class="grow hint" id="hint">Toca el micrófono para dictar.</div>
-      <button class="btn primary" id="save" disabled>Guardar</button>
-    </div>
-  </section>
-
-  <input class="search" id="search" type="search" placeholder="Buscar en tus ideas">
+  <input class="search" id="search" type="search" placeholder="Buscar en tus ideas" hidden>
   <div class="chips" id="chips"></div>
   <div class="list" id="list"></div>
 </div>
+
+<section class="capture">
+  <div class="capture-in">
+    <div class="hint" id="hint" role="status">Toca el micrófono para dictar.</div>
+    <div class="composer">
+      <textarea id="input" rows="1" aria-label="Nueva idea" placeholder="¿Qué se te ocurrió?"></textarea>
+      <button class="send" id="save" aria-label="Guardar idea" disabled>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="6 11 12 5 18 11"/></svg>
+      </button>
+      <button class="mic" id="mic" aria-label="Dictar idea">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
+      </button>
+    </div>
+  </div>
+</section>
 
 <dialog id="settings">
   <form method="dialog" class="sheet">
@@ -441,15 +485,17 @@ Reglas:
 
   // ---------- render ----------
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  function fmtDate(iso){
-    const d = new Date(iso), now = new Date();
-    const hm = d.toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit'});
-    const sameDay = d.toDateString() === now.toDateString();
-    const yest = new Date(now); yest.setDate(now.getDate() - 1);
-    if (sameDay) return 'Hoy ' + hm;
-    if (d.toDateString() === yest.toDateString()) return 'Ayer ' + hm;
-    return d.toLocaleDateString('es-CL', {day:'numeric', month:'short'}) + ' ' + hm;
+  const fmtHora = iso => new Date(iso).toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit', hourCycle:'h23'});
+  function fmtDia(d){
+    const now = new Date(), yest = new Date(now); yest.setDate(now.getDate() - 1);
+    if (d.toDateString() === now.toDateString()) return 'Hoy';
+    if (d.toDateString() === yest.toDateString()) return 'Ayer';
+    const opts = {weekday:'long', day:'numeric', month:'long'};
+    if (d.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
+    const t = d.toLocaleDateString('es-CL', opts);
+    return t.charAt(0).toUpperCase() + t.slice(1);
   }
+  let abierta = null; // la idea que muestra sus opciones
 
   function renderChips(){
     const opts = [{id:'todas', label:'Todas'}, ...CATS, {id:'hechas', label:'Hechas'}];
@@ -469,48 +515,89 @@ Reglas:
 
     const q = query.toLowerCase();
     const items = ideas.filter(i => {
+      // En una línea de tiempo lo hecho sigue en su lugar, tachado; "Hechas" muestra solo eso.
       if (filter === 'hechas') { if (!i.hecha) return false; }
-      else { if (i.hecha) return false; if (filter !== 'todas' && i.categoria !== filter) return false; }
+      else if (filter !== 'todas' && i.categoria !== filter) return false;
       if (!q) return true;
       return [i.texto, i.titulo, i.resumen, ...(i.etiquetas || [])].join(' ').toLowerCase().includes(q);
     });
 
     if (!items.length) {
-      listEl.innerHTML = `<div class="empty">${ideas.length ? 'Nada por aquí.' : 'Tu bandeja está vacía. Suelta la primera idea arriba.'}</div>`;
+      listEl.innerHTML = `<div class="empty">${ideas.length ? 'Nada por aquí.' : 'Aquí aparecerán tus ideas, de la más nueva a la más antigua. Dicta o escribe la primera abajo.'}</div>`;
       return;
     }
 
-    listEl.innerHTML = items.map(i => {
-      const cat = CATS.find(c => c.id === i.categoria) || CATS[4];
-      const state = busy.has(i.id) ? '<span class="tag soft"><span class="spin"></span> ordenando</span>'
-                  : !i.clasificada ? '<span class="tag soft">sin ordenar</span>' : '';
-      const tags = (i.etiquetas || []).map(t => `<span class="tag soft">#${esc(t)}</span>`).join('');
-      const title = i.titulo ? `<p class="title">${esc(i.titulo)}</p>` : '';
-      const resumen = i.resumen && i.resumen.trim() !== i.texto.trim() ? `<p class="resumen">${esc(i.resumen)}</p>` : '';
-      const catOpts = CATS.map(c => `<option value="${c.id}" ${c.id === i.categoria ? 'selected' : ''}>${c.label}</option>`).join('');
-      return `<article class="card idea ${i.hecha ? 'done' : ''}" data-id="${i.id}">
-        <div class="meta">
-          <span class="tag" style="background:${cat.color}">${cat.label}</span>
-          <span class="tag soft">${TIPOS[i.tipo] || 'Idea'}</span>
-          ${tags}${state}
-          <span style="margin-left:auto">${fmtDate(i.creada)}</span>
-        </div>
+    // Agrupadas por día, de la más nueva a la más antigua.
+    const dias = new Map();
+    [...items].sort((a, b) => b.creada.localeCompare(a.creada)).forEach(i => {
+      const k = new Date(i.creada).toDateString();
+      if (!dias.has(k)) dias.set(k, []);
+      dias.get(k).push(i);
+    });
+    const hoy = new Date().toDateString();
+    listEl.innerHTML = [...dias].map(([k, grupo]) => `<section>
+      <h2 class="dia-titulo ${k === hoy ? 'hoy' : ''}">${fmtDia(new Date(k))}</h2>
+      <div>${grupo.map(entrada).join('')}</div>
+    </section>`).join('');
+  }
+
+  function entrada(i){
+    const cat = CATS.find(c => c.id === i.categoria) || CATS[4];
+    const meta = [
+      i.categoria !== 'otro' ? `<span class="cat">${cat.label}</span>` : '',
+      i.tipo && i.tipo !== 'idea' ? `<span>${TIPOS[i.tipo]}</span>` : '',
+      ...(i.etiquetas || []).map(t => `<span>#${esc(t)}</span>`),
+      busy.has(i.id) ? '<span><span class="spin"></span> ordenando</span>'
+        : !i.clasificada && config.apiKey ? '<span>sin ordenar</span>' : ''
+    ].filter(Boolean).join('');
+    const title = i.titulo ? `<p class="title">${esc(i.titulo)}</p>` : '';
+    const resumen = i.resumen && i.resumen.trim() !== i.texto.trim() ? `<p class="resumen">${esc(i.resumen)}</p>` : '';
+    const catOpts = CATS.map(c => `<option value="${c.id}" ${c.id === i.categoria ? 'selected' : ''}>${c.label}</option>`).join('');
+    const abre = abierta === i.id;
+    return `<article class="entrada ${i.hecha ? 'done' : ''}" data-id="${i.id}" style="--cat:${cat.color}">
+      <time class="hora" datetime="${esc(i.creada)}">${fmtHora(i.creada)}</time>
+      <div class="riel">
+        <button class="punto" data-act="done" aria-label="${i.hecha ? 'Reabrir idea' : 'Marcar como hecha'}" aria-pressed="${!!i.hecha}">
+          <i><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></i>
+        </button>
+      </div>
+      <div class="contenido">
         ${title}
         <p class="body">${esc(i.texto)}</p>
         ${resumen}
-        <div class="actions">
+        ${meta ? `<div class="meta">${meta}</div>` : ''}
+        ${abre ? `<div class="actions">
           <button class="btn" data-act="done">${i.hecha ? 'Reabrir' : 'Hecha'}</button>
-          <select data-act="cat" aria-label="Categoría">${catOpts}</select>
+          <select data-act="cat" aria-label="Sección">${catOpts}</select>
           ${!i.clasificada && config.apiKey ? '<button class="btn" data-act="retry">Ordenar</button>' : ''}
           <button class="btn" data-act="del" style="color:var(--danger);margin-left:auto">Borrar</button>
-        </div>
-      </article>`;
-    }).join('');
+        </div>` : ''}
+      </div>
+    </article>`;
   }
 
   // ---------- eventos ----------
-  function updateSaveBtn(){ saveBtn.disabled = !input.value.trim(); }
+  function updateSaveBtn(){
+    saveBtn.disabled = !input.value.trim();
+    // El cuadro crece con el texto, hasta el máximo del CSS.
+    input.style.height = 'auto';
+    input.style.height = Math.max(52, input.scrollHeight + 2) + 'px';
+  }
   input.addEventListener('input', updateSaveBtn);
+
+  // El mensaje solo aparece cuando dice algo más que la instrucción inicial.
+  const HINT_INICIAL = hint.textContent;
+  new MutationObserver(() => hint.classList.toggle('visible', hint.textContent !== HINT_INICIAL))
+    .observe(hint, {childList:true, characterData:true, subtree:true});
+
+  $('keyBanner').addEventListener('click', () => $('openSettings').click());
+  $('toggleSearch').addEventListener('click', e => {
+    const s = $('search'), abrir = s.hidden;
+    s.hidden = !abrir;
+    e.currentTarget.setAttribute('aria-expanded', abrir);
+    if (abrir) s.focus();
+    else if (query) { s.value = ''; query = ''; render(); }
+  });
   saveBtn.addEventListener('click', () => { if (recording) { modoVoz = false; stopRec(); } addIdea(); });
   input.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) addIdea(); });
 
@@ -521,7 +608,13 @@ Reglas:
   });
 
   listEl.addEventListener('click', e => {
-    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const b = e.target.closest('button[data-act]');
+    if (!b) {
+      // Tocar la idea muestra u oculta sus opciones.
+      const fila = e.target.closest('.entrada');
+      if (fila && !e.target.closest('.actions')) { abierta = abierta === fila.dataset.id ? null : fila.dataset.id; render(); }
+      return;
+    }
     const id = b.closest('[data-id]').dataset.id;
     const idea = ideas.find(i => i.id === id); if (!idea) return;
     if (b.dataset.act === 'done') { idea.hecha = !idea.hecha; saveIdeas(); render(); toast(idea.hecha ? 'Marcada como hecha' : 'Reabierta'); }
