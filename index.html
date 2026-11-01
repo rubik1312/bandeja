@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bandeja de ideas</title>
+<meta name="theme-color" content="#14171c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#f4f2ee; --surface:#ffffff; --surface-2:#ebe8e2; --text:#1b1d21; --muted:#6b6f76;
+    --line:#dedad3; --accent:#d9480f; --accent-ink:#ffffff; --danger:#c92a2a; --ok:#2b8a3e;
+    --c-trabajo:#1c7ed6; --c-universidad:#7048e8; --c-personal:#e8590c; --c-proyectos:#0ca678; --c-otro:#868e96;
+    --radius:16px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#14171c; --surface:#1d2128; --surface-2:#262b33; --text:#eceef1; --muted:#9aa1ab;
+      --line:#30363f; --accent:#ff7a3d; --accent-ink:#14171c;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14171c; --surface:#1d2128; --surface-2:#262b33; --text:#eceef1; --muted:#9aa1ab;
+    --line:#30363f; --accent:#ff7a3d; --accent-ink:#14171c;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--text);
+    font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    padding:env(safe-area-inset-top) 0 calc(24px + env(safe-area-inset-bottom));
+  }
+  .wrap{max-width:640px;margin:0 auto;padding:0 16px}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 0 10px}
+  h1{font-size:22px;margin:0;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:13px;margin-top:2px}
+  .icon-btn{background:none;border:0;color:var(--text);width:44px;height:44px;border-radius:12px;display:grid;place-items:center;cursor:pointer}
+  .icon-btn:active{background:var(--surface-2)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+  .capture{padding:14px;margin-bottom:14px}
+  textarea{
+    width:100%;min-height:92px;resize:vertical;border:0;outline:none;background:transparent;color:var(--text);
+    font:inherit;font-size:17px;
+  }
+  textarea::placeholder{color:var(--muted)}
+  .row{display:flex;gap:10px;align-items:center}
+  .grow{flex:1}
+  .mic{
+    width:64px;height:64px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);
+    display:grid;place-items:center;cursor:pointer;flex:none;box-shadow:0 4px 14px rgba(0,0,0,.18)
+  }
+  .mic.rec{background:var(--danger);color:#fff;animation:pulse 1.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(201,42,42,.5)}70%{box-shadow:0 0 0 16px rgba(201,42,42,0)}100%{box-shadow:0 0 0 0 rgba(201,42,42,0)}}
+  .btn{
+    border:0;border-radius:12px;padding:12px 16px;font:inherit;font-weight:600;cursor:pointer;
+    background:var(--surface-2);color:var(--text)
+  }
+  .btn.primary{background:var(--text);color:var(--bg)}
+  .btn:disabled{opacity:.45}
+  .hint{color:var(--muted);font-size:13px;min-height:18px}
+  .search{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 12px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{
+    flex:none;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;
+    padding:7px 13px;font:inherit;font-size:14px;cursor:pointer
+  }
+  .chip[aria-pressed="true"]{background:var(--text);color:var(--bg);border-color:var(--text)}
+  .list{display:flex;flex-direction:column;gap:10px}
+  .idea{padding:14px}
+  .idea.done{opacity:.55}
+  .idea.done .title{text-decoration:line-through}
+  .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--muted);margin-bottom:6px}
+  .tag{border-radius:999px;padding:2px 9px;font-weight:600;font-size:12px;color:#fff}
+  .tag.soft{background:var(--surface-2);color:var(--muted);font-weight:500}
+  .title{font-weight:650;font-size:16px;margin:0 0 4px}
+  .body{margin:0;color:var(--text);white-space:pre-wrap;word-wrap:break-word}
+  .resumen{margin:6px 0 0;color:var(--muted);font-size:14px}
+  .actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .actions .btn{padding:8px 12px;font-size:14px;font-weight:500}
+  select{font:inherit;font-size:14px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text)}
+  .empty{text-align:center;color:var(--muted);padding:40px 10px}
+  .banner{padding:12px 14px;margin-bottom:14px;font-size:14px}
+  .banner b{display:block;margin-bottom:2px}
+  dialog{border:0;border-radius:20px;padding:0;width:min(560px,calc(100% - 32px));background:var(--surface);color:var(--text)}
+  dialog::backdrop{background:rgba(0,0,0,.45)}
+  .sheet{padding:20px}
+  .sheet h2{margin:0 0 14px;font-size:19px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  .field input,.field select{width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit}
+  .small{font-size:13px;color:var(--muted)}
+  .toast{
+    position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(120px);
+    background:var(--text);color:var(--bg);padding:11px 16px;border-radius:12px;font-size:14px;transition:transform .25s;max-width:calc(100% - 32px)
+  }
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .spin{display:inline-block;width:10px;height:10px;border:2px solid var(--muted);border-top-color:transparent;border-radius:50%;animation:sp .8s linear infinite;vertical-align:-1px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Bandeja de ideas</h1>
+      <div class="sub" id="count">—</div>
+    </div>
+    <button class="icon-btn" id="openSettings" aria-label="Ajustes">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </header>
+
+  <div class="card banner" id="keyBanner" hidden>
+    <b>Falta tu clave de la API de Claude</b>
+    Puedes guardar ideas igual; se ordenarán solas cuando agregues la clave en Ajustes.
+  </div>
+
+  <section class="card capture">
+    <textarea id="input" placeholder="¿Qué se te ocurrió? Escribe o toca el micrófono…"></textarea>
+    <div class="row">
+      <button class="mic" id="mic" aria-label="Dictar idea">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
+      </button>
+      <div class="grow hint" id="hint">Toca el micrófono para dictar.</div>
+      <button class="btn primary" id="save" disabled>Guardar</button>
+    </div>
+  </section>
+
+  <input class="search" id="search" type="search" placeholder="Buscar en tus ideas">
+  <div class="chips" id="chips"></div>
+  <div class="list" id="list"></div>
+</div>
+
+<dialog id="settings">
+  <form method="dialog" class="sheet">
+    <h2>Ajustes</h2>
+    <div class="field">
+      <label for="apiKey">Clave de la API de Claude</label>
+      <input id="apiKey" type="password" autocomplete="off" placeholder="sk-ant-...">
+      <div class="small" style="margin-top:6px">Se guarda solo en este teléfono.</div>
+    </div>
+    <div class="field">
+      <label for="model">Modelo</label>
+      <input id="model" type="text" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="theme">Tema</label>
+      <select id="theme">
+        <option value="auto">Automático</option>
+        <option value="light">Claro</option>
+        <option value="dark">Oscuro</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Respaldo</label>
+      <div class="row" style="flex-wrap:wrap">
+        <button type="button" class="btn" id="exportBtn">Exportar</button>
+        <button type="button" class="btn" id="importBtn">Importar</button>
+        <button type="button" class="btn" id="retryBtn">Ordenar pendientes</button>
+      </div>
+      <input type="file" id="importFile" accept="application/json" hidden>
+      <div class="small" style="margin-top:6px">Las ideas viven en este teléfono. Exporta de vez en cuando para no perderlas.</div>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:6px">
+      <button class="btn" value="cancel">Cerrar</button>
+      <button class="btn primary" id="saveSettings" value="ok">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const CATS = [
+    {id:'trabajo', label:'Trabajo', color:'var(--c-trabajo)'},
+    {id:'universidad', label:'Universidad', color:'var(--c-universidad)'},
+    {id:'personal', label:'Personal', color:'var(--c-personal)'},
+    {id:'proyectos', label:'Proyectos', color:'var(--c-proyectos)'},
+    {id:'otro', label:'Otro', color:'var(--c-otro)'}
+  ];
+  const TIPOS = {idea:'Idea', tarea:'Tarea', recordatorio:'Recordatorio', nota:'Nota'};
+  const DEFAULT_MODEL = 'claude-haiku-5-5';
+  const STORE = 'bandeja.ideas.v1';
+  const CONF = 'bandeja.config.v1';
+
+  // ---------- almacenamiento ----------
+  const load = (k, fallback) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch { return fallback; } };
+  const persist = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { toast('No se pudo guardar en el teléfono'); return false; } };
+
+  let ideas = load(STORE, []);
+  let config = Object.assign({apiKey:'', model:DEFAULT_MODEL, theme:'auto'}, load(CONF, {}));
+  let filter = 'todas';
+  let query = '';
+  const busy = new Set();
+
+  const saveIdeas = () => persist(STORE, ideas);
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+  // ---------- elementos ----------
+  const $ = id => document.getElementById(id);
+  const input = $('input'), saveBtn = $('save'), micBtn = $('mic'), hint = $('hint');
+  const listEl = $('list'), chipsEl = $('chips'), countEl = $('count');
+
+  // ---------- tema ----------
+  function applyTheme(){
+    if (config.theme === 'auto') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', config.theme);
+  }
+
+  // ---------- toast ----------
+  let toastTimer;
+  function toast(msg){
+    const t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  // ---------- clasificación con Claude ----------
+  const SYSTEM = `Eres el asistente que ordena la bandeja de ideas de Juan Carlos. Él estudia Ingeniería Civil Industrial online, trabaja como operador de sorter en un centro logístico (turno de 00:00 a 09:00) y arma proyectos tecnológicos propios (scripts en Python, dashboards, automatizaciones).
+
+Recibirás una idea dictada o escrita, a veces con errores de transcripción. Devuelve SOLO un objeto JSON, sin texto adicional ni bloques de código, con esta forma:
+{"titulo": "...", "resumen": "...", "categoria": "...", "tipo": "...", "etiquetas": ["..."]}
+
+Reglas:
+- titulo: máximo 8 palabras, claro y concreto, en español.
+- resumen: una oración que limpie la idea (corrige errores de dictado), sin inventar nada que no esté en el texto.
+- categoria: una de "trabajo" (sorter, turno, logística del trabajo), "universidad" (ramos, pruebas, entregas, clases), "personal" (salud, gym, familia, compras, vida diaria), "proyectos" (apps, código, emprendimientos, automatizaciones) u "otro".
+- tipo: "idea", "tarea" (algo que debe hacer), "recordatorio" (algo con fecha u hora) o "nota" (un dato para guardar).
+- etiquetas: de 0 a 3 palabras clave cortas en minúscula.`;
+
+  async function classify(idea){
+    if (!config.apiKey || busy.has(idea.id) || !navigator.onLine) return;
+    busy.add(idea.id); render();
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{
+          'content-type':'application/json',
+          'x-api-key':config.apiKey,
+          'anthropic-version':'2023-06-01',
+          'anthropic-dangerous-direct-browser-access':'true'
+        },
+        body: JSON.stringify({
+          model: config.model || DEFAULT_MODEL,
+          max_tokens: 400,
+          system: SYSTEM,
+          messages: [{role:'user', content: idea.texto}]
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error?.message || ('Error ' + res.status));
+      }
+      const data = await res.json();
+      const raw = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+      const json = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
+      const target = ideas.find(i => i.id === idea.id);
+      if (target) {
+        target.titulo = String(json.titulo || '').slice(0, 120);
+        target.resumen = String(json.resumen || '');
+        target.categoria = CATS.some(c => c.id === json.categoria) ? json.categoria : 'otro';
+        target.tipo = TIPOS[json.tipo] ? json.tipo : 'idea';
+        target.etiquetas = Array.isArray(json.etiquetas) ? json.etiquetas.slice(0, 3).map(String) : [];
+        target.clasificada = true;
+        target.error = null;
+        saveIdeas();
+      }
+    } catch (e) {
+      const target = ideas.find(i => i.id === idea.id);
+      if (target) { target.error = e.message; saveIdeas(); }
+      toast('No se pudo ordenar: ' + e.message);
+    } finally {
+      busy.delete(idea.id); render();
+    }
+  }
+
+  function classifyPending(){
+    ideas.filter(i => !i.clasificada).forEach(i => classify(i));
+  }
+
+  // ---------- guardar idea ----------
+  function addIdea(){
+    const texto = input.value.trim();
+    if (!texto) return;
+    const idea = {id:uid(), texto, creada:new Date().toISOString(), categoria:'otro', tipo:'idea', etiquetas:[], hecha:false, clasificada:false};
+    ideas.unshift(idea);
+    saveIdeas();
+    input.value = ''; updateSaveBtn();
+    render();
+    if (!config.apiKey) toast('Guardada. Se ordenará cuando agregues tu clave.');
+    else if (!navigator.onLine) toast('Guardada sin conexión. Se ordenará al volver la señal.');
+    else toast('Guardada');
+    classify(idea);
+  }
+
+  // ---------- dictado por voz ----------
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec = null, recording = false, recError = false, baseText = '';
+  if (!SR) {
+    micBtn.disabled = true; micBtn.style.opacity = .4;
+    hint.textContent = 'Este navegador no permite dictar. Usa Chrome.';
+  }
+  function startRec(){
+    rec = new SR();
+    rec.lang = 'es-CL';
+    rec.continuous = true;
+    rec.interimResults = true;
+    baseText = input.value ? input.value.trim() + ' ' : '';
+    rec.onresult = e => {
+      let finalTxt = '', interim = '';
+      for (let i = 0; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (r.isFinal) finalTxt += r[0].transcript; else interim += r[0].transcript;
+      }
+      input.value = (baseText + finalTxt + interim).replace(/\s+/g, ' ');
+      updateSaveBtn();
+    };
+    rec.onerror = e => {
+      const msg = {
+        'not-allowed':'Permite el micrófono para dictar.',
+        'no-speech':'No escuché nada. Intenta de nuevo.',
+        'network':'El dictado necesita conexión.'
+      }[e.error] || ('Error de dictado: ' + e.error);
+      recError = true;
+      hint.textContent = msg;
+    };
+    rec.onend = () => {
+      recording = false; micBtn.classList.remove('rec');
+      if (!recError) hint.textContent = input.value.trim() ? 'Revisa y guarda.' : 'Toca el micrófono para dictar.';
+    };
+    recError = false;
+    rec.start();
+    recording = true; micBtn.classList.add('rec'); hint.textContent = 'Escuchando… toca de nuevo para terminar.';
+  }
+  micBtn.addEventListener('click', () => {
+    if (!SR) return;
+    if (recording) { rec && rec.stop(); }
+    else { try { startRec(); } catch (e) { hint.textContent = 'No se pudo iniciar el dictado.'; } }
+  });
+
+  // ---------- render ----------
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function fmtDate(iso){
+    const d = new Date(iso), now = new Date();
+    const hm = d.toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit'});
+    const sameDay = d.toDateString() === now.toDateString();
+    const yest = new Date(now); yest.setDate(now.getDate() - 1);
+    if (sameDay) return 'Hoy ' + hm;
+    if (d.toDateString() === yest.toDateString()) return 'Ayer ' + hm;
+    return d.toLocaleDateString('es-CL', {day:'numeric', month:'short'}) + ' ' + hm;
+  }
+
+  function renderChips(){
+    const opts = [{id:'todas', label:'Todas'}, ...CATS, {id:'hechas', label:'Hechas'}];
+    chipsEl.innerHTML = opts.map(o => {
+      const n = o.id === 'todas' ? ideas.filter(i => !i.hecha).length
+              : o.id === 'hechas' ? ideas.filter(i => i.hecha).length
+              : ideas.filter(i => !i.hecha && i.categoria === o.id).length;
+      return `<button class="chip" data-f="${o.id}" aria-pressed="${filter === o.id}">${o.label}${n ? ' · ' + n : ''}</button>`;
+    }).join('');
+  }
+
+  function render(){
+    $('keyBanner').hidden = !!config.apiKey;
+    const pend = ideas.filter(i => !i.hecha).length;
+    countEl.textContent = pend === 1 ? '1 pendiente' : pend + ' pendientes';
+    renderChips();
+
+    const q = query.toLowerCase();
+    const items = ideas.filter(i => {
+      if (filter === 'hechas') { if (!i.hecha) return false; }
+      else { if (i.hecha) return false; if (filter !== 'todas' && i.categoria !== filter) return false; }
+      if (!q) return true;
+      return [i.texto, i.titulo, i.resumen, ...(i.etiquetas || [])].join(' ').toLowerCase().includes(q);
+    });
+
+    if (!items.length) {
+      listEl.innerHTML = `<div class="empty">${ideas.length ? 'Nada por aquí.' : 'Tu bandeja está vacía. Suelta la primera idea arriba.'}</div>`;
+      return;
+    }
+
+    listEl.innerHTML = items.map(i => {
+      const cat = CATS.find(c => c.id === i.categoria) || CATS[4];
+      const state = busy.has(i.id) ? '<span class="tag soft"><span class="spin"></span> ordenando</span>'
+                  : !i.clasificada ? '<span class="tag soft">sin ordenar</span>' : '';
+      const tags = (i.etiquetas || []).map(t => `<span class="tag soft">#${esc(t)}</span>`).join('');
+      const title = i.titulo ? `<p class="title">${esc(i.titulo)}</p>` : '';
+      const resumen = i.resumen && i.resumen.trim() !== i.texto.trim() ? `<p class="resumen">${esc(i.resumen)}</p>` : '';
+      const catOpts = CATS.map(c => `<option value="${c.id}" ${c.id === i.categoria ? 'selected' : ''}>${c.label}</option>`).join('');
+      return `<article class="card idea ${i.hecha ? 'done' : ''}" data-id="${i.id}">
+        <div class="meta">
+          <span class="tag" style="background:${cat.color}">${cat.label}</span>
+          <span class="tag soft">${TIPOS[i.tipo] || 'Idea'}</span>
+          ${tags}${state}
+          <span style="margin-left:auto">${fmtDate(i.creada)}</span>
+        </div>
+        ${title}
+        <p class="body">${esc(i.texto)}</p>
+        ${resumen}
+        <div class="actions">
+          <button class="btn" data-act="done">${i.hecha ? 'Reabrir' : 'Hecha'}</button>
+          <select data-act="cat" aria-label="Categoría">${catOpts}</select>
+          ${!i.clasificada && config.apiKey ? '<button class="btn" data-act="retry">Ordenar</button>' : ''}
+          <button class="btn" data-act="del" style="color:var(--danger);margin-left:auto">Borrar</button>
+        </div>
+      </article>`;
+    }).join('');
+  }
+
+  // ---------- eventos ----------
+  function updateSaveBtn(){ saveBtn.disabled = !input.value.trim(); }
+  input.addEventListener('input', updateSaveBtn);
+  saveBtn.addEventListener('click', () => { if (recording && rec) rec.stop(); addIdea(); });
+  input.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) addIdea(); });
+
+  $('search').addEventListener('input', e => { query = e.target.value; render(); });
+  chipsEl.addEventListener('click', e => {
+    const b = e.target.closest('[data-f]'); if (!b) return;
+    filter = b.dataset.f; render();
+  });
+
+  listEl.addEventListener('click', e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const id = b.closest('[data-id]').dataset.id;
+    const idea = ideas.find(i => i.id === id); if (!idea) return;
+    if (b.dataset.act === 'done') { idea.hecha = !idea.hecha; saveIdeas(); render(); toast(idea.hecha ? 'Marcada como hecha' : 'Reabierta'); }
+    if (b.dataset.act === 'retry') classify(idea);
+    if (b.dataset.act === 'del') {
+      if (confirm('¿Borrar esta idea?')) { ideas = ideas.filter(i => i.id !== id); saveIdeas(); render(); toast('Borrada'); }
+    }
+  });
+  listEl.addEventListener('change', e => {
+    const s = e.target.closest('select[data-act="cat"]'); if (!s) return;
+    const idea = ideas.find(i => i.id === s.closest('[data-id]').dataset.id); if (!idea) return;
+    idea.categoria = s.value; saveIdeas(); render();
+  });
+
+  // ajustes
+  const dlg = $('settings');
+  $('openSettings').addEventListener('click', () => {
+    $('apiKey').value = config.apiKey; $('model').value = config.model || DEFAULT_MODEL; $('theme').value = config.theme;
+    dlg.showModal();
+  });
+  $('saveSettings').addEventListener('click', () => {
+    config.apiKey = $('apiKey').value.trim();
+    config.model = $('model').value.trim() || DEFAULT_MODEL;
+    config.theme = $('theme').value;
+    persist(CONF, config); applyTheme(); render();
+    toast('Ajustes guardados');
+    classifyPending();
+  });
+  $('exportBtn').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify({exportada:new Date().toISOString(), ideas}, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'bandeja-ideas-' + new Date().toISOString().slice(0,10) + '.json';
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+  $('importBtn').addEventListener('click', () => $('importFile').click());
+  $('importFile').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      const incoming = Array.isArray(data) ? data : data.ideas;
+      if (!Array.isArray(incoming)) throw new Error('formato');
+      const known = new Set(ideas.map(i => i.id));
+      const nuevas = incoming.filter(i => i && i.id && i.texto && !known.has(i.id));
+      ideas = [...nuevas, ...ideas].sort((a, b) => b.creada.localeCompare(a.creada));
+      saveIdeas(); render(); toast(nuevas.length + ' ideas importadas');
+    } catch { toast('Ese archivo no es un respaldo válido'); }
+    e.target.value = '';
+  });
+  $('retryBtn').addEventListener('click', () => {
+    const n = ideas.filter(i => !i.clasificada).length;
+    if (!config.apiKey) return toast('Primero guarda tu clave');
+    if (!n) return toast('No hay ideas pendientes de ordenar');
+    classifyPending(); toast('Ordenando ' + n + (n === 1 ? ' idea' : ' ideas'));
+  });
+
+  window.addEventListener('online', classifyPending);
+
+  // ---------- inicio ----------
+  applyTheme();
+  render();
+  classifyPending();
+
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+})();
+</script>
+</body>
+</html>
