@@ -1,10 +1,10 @@
 // Guarda la app en caché para que abra sin conexión.
 // Cambia VERSION cada vez que publiques cambios, para que el teléfono baje la nueva versión.
-const VERSION = 'bandeja-v12';
+const VERSION = 'bandeja-v13';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES.map(f => new Request(f, {cache:'reload'})))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
@@ -20,7 +20,7 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET' || url.origin !== location.origin) return; // la API de Claude va directo a la red
   // Red primero (para recibir actualizaciones); si no hay señal, usa la copia guardada.
   e.respondWith(
-    fetch(e.request, {cache:'no-cache'}) // pregunta siempre al servidor: GitHub Pages deja copias por 10 minutos
+    fetch(new Request(e.request.url, {cache:'no-cache'})) // pregunta siempre al servidor: GitHub Pages deja copias por 10 minutos
       .then(res => { const copy = res.clone(); caches.open(VERSION).then(c => c.put(e.request, copy)); return res; })
       .catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
   );
