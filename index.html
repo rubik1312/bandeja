@@ -169,8 +169,17 @@
       <input id="jarvisKey" type="password" autocomplete="off" placeholder="AccessKey de Picovoice">
       <div class="row" style="flex-wrap:wrap;margin-top:8px">
         <button type="button" class="btn" id="jarvisToggle">Activar</button>
+        <button type="button" class="btn" id="jarvisPausa" hidden>Pausar</button>
         <button type="button" class="btn" id="jarvisEncima" hidden>Permitir abrir encima</button>
         <button type="button" class="btn" id="jarvisBateria" hidden>Batería sin restricciones</button>
+      </div>
+      <div class="row" id="jarvisSensBox" style="margin-top:8px;align-items:center" hidden>
+        <label for="jarvisSens" style="margin:0">Sensibilidad</label>
+        <select id="jarvisSens">
+          <option value="alta">Alta (te escucha más fácil)</option>
+          <option value="media">Media</option>
+          <option value="baja">Baja (menos falsas alarmas)</option>
+        </select>
       </div>
       <div class="small" id="jarvisInfo" style="margin-top:6px"></div>
     </div>
@@ -531,10 +540,16 @@ Reglas:
     $('jarvisKey').hidden = e.motor === 'oww'; // desde la v3 el detector no necesita clave
     $('jarvisKey').placeholder = e.tieneClave ? 'Clave guardada (escribe otra para cambiarla)' : 'AccessKey de Picovoice';
     $('jarvisToggle').textContent = e.activo ? 'Desactivar' : 'Activar';
+    const conPausa = e.pausado !== undefined; // desde la v5 de la app
+    $('jarvisPausa').hidden = !conPausa || !e.activo;
+    $('jarvisPausa').textContent = e.pausado ? 'Reanudar' : 'Pausar';
+    $('jarvisSensBox').hidden = !conPausa;
+    if (e.sensibilidad) $('jarvisSens').value = e.sensibilidad;
     $('jarvisEncima').hidden = !e.activo || e.encima;
     $('jarvisBateria').hidden = !e.activo || e.bateria;
     $('jarvisInfo').textContent =
         e.error ? 'No pude activar Jarvis: ' + e.error
+      : e.activo && e.pausado ? 'En pausa: no usa el micrófono. También lo puedes pausar desde el botón “Jarvis” del panel de notificaciones.'
       : e.escuchando && !e.encima ? 'Escuchando. Permite “abrir encima” para que la app se abra sola al oírte.'
       : e.escuchando ? 'Escuchando. Di “Oye Jarvis” (con la J en inglés, “yarvis”) en cualquier momento.'
       : e.activo ? 'Activando…'
@@ -554,6 +569,8 @@ Reglas:
       NATIVA.activarJarvis(clave);
       $('jarvisKey').value = '';
     });
+    $('jarvisPausa').addEventListener('click', () => NATIVA.pausarJarvis(!jarvisEstado().pausado));
+    $('jarvisSens').addEventListener('change', e => { NATIVA.sensibilidadJarvis(e.target.value); toast('Sensibilidad: ' + e.target.value); });
     $('jarvisEncima').addEventListener('click', () => NATIVA.abrirPermisoEncima());
     $('jarvisBateria').addEventListener('click', () => NATIVA.abrirBateria());
   }
