@@ -34,7 +34,8 @@
   }
   .wrap{max-width:640px;margin:0 auto;padding:0 16px}
   header{display:flex;align-items:center;gap:2px;padding:14px 0 6px}
-  header > div:first-child{flex:1;min-width:0}
+  .encabezado{flex:1;min-width:0}
+  #openApps{margin-left:-10px}
   h1{font-size:24px;margin:0;letter-spacing:-.02em}
   .sub{color:var(--muted);font-size:13px;margin-top:1px}
   .icon-btn{background:none;border:0;color:var(--text);width:44px;height:44px;border-radius:12px;display:grid;place-items:center;cursor:pointer}
@@ -123,6 +124,29 @@
   .banner b{color:var(--text);font-weight:600}
   dialog{border:0;border-radius:20px;padding:0;width:min(560px,calc(100% - 32px));background:var(--surface);color:var(--text)}
   dialog::backdrop{background:rgba(0,0,0,.45)}
+  /* Panel lateral de aplicaciones */
+  #cajon{
+    margin:0;inset:0 auto 0 0;width:min(320px,85%);max-width:none;height:100%;max-height:none;
+    border-radius:0 20px 20px 0;overflow:hidden;
+  }
+  #cajon[open]{display:flex;flex-direction:column;animation:cajon .2s ease-out}
+  @keyframes cajon{from{transform:translateX(-100%)}to{transform:none}}
+  @media (prefers-reduced-motion:reduce){#cajon[open]{animation:none}}
+  .cajon-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px 8px 8px 20px}
+  .cajon-cab h2{margin:0;font-size:19px;outline:none}
+  .btn-texto{border:0;background:none;color:var(--accent);font:inherit;font-weight:600;padding:10px 12px;border-radius:10px;cursor:pointer;min-height:44px}
+  .btn-texto:active{background:var(--surface-2)}
+  #cajonBuscar{margin:4px 16px 8px;width:calc(100% - 32px);flex:none;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit}
+  .cajon-lista{flex:1;overflow-y:auto;padding:0 0 16px}
+  .app{
+    display:flex;align-items:center;gap:14px;width:100%;min-height:60px;padding:8px 20px;border:0;background:none;
+    color:var(--text);font:inherit;text-align:left;cursor:pointer;
+  }
+  .app:active{background:var(--surface-2)}
+  .app img{width:40px;height:40px;flex:none}
+  .app span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .app input{width:22px;height:22px;flex:none;accent-color:var(--accent)}
+  .cajon-vacio{color:var(--muted);font-size:14px;padding:16px 20px}
   .sheet{padding:20px}
   .sheet h2{margin:0 0 14px;font-size:19px}
   .field{margin-bottom:14px}
@@ -142,7 +166,10 @@
 <body>
 <div class="wrap">
   <header>
-    <div>
+    <button class="icon-btn" id="openApps" aria-label="Abrir aplicaciones" aria-haspopup="dialog" hidden>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+    </button>
+    <div class="encabezado">
       <h1>Bandeja</h1>
       <div class="sub" id="count">—</div>
     </div>
@@ -177,6 +204,15 @@
     </div>
   </div>
 </section>
+
+<dialog id="cajon" aria-labelledby="cajonTitulo">
+  <div class="cajon-cab">
+    <h2 id="cajonTitulo" tabindex="-1" autofocus>Aplicaciones</h2>
+    <button class="btn-texto" id="cajonEditar">Editar</button>
+  </div>
+  <input id="cajonBuscar" type="search" placeholder="Buscar aplicación" aria-label="Buscar aplicación" hidden>
+  <div class="cajon-lista" id="cajonLista"></div>
+</dialog>
 
 <dialog id="settings">
   <form method="dialog" class="sheet">
@@ -721,6 +757,79 @@ Reglas:
     $('jarvisEncima').addEventListener('click', () => NATIVA.abrirPermisoEncima());
     $('jarvisBateria').addEventListener('click', () => NATIVA.abrirBateria());
   }
+
+  // ---------- panel de aplicaciones (solo en la app Android) ----------
+  const cajon = $('cajon'), cajonLista = $('cajonLista');
+  let instaladas = [], editando = false;
+  const iconos = new Map();
+  function icono(p){
+    if (!iconos.has(p)) iconos.set(p, NATIVA.iconoApp(p));
+    return iconos.get(p);
+  }
+  // En Editar puede haber cien apps: cada ícono se pide recién cuando se ve.
+  const iconosVisibles = 'IntersectionObserver' in window && new IntersectionObserver(entradas => entradas.forEach(e => {
+    if (!e.isIntersecting) return;
+    e.target.src = icono(e.target.dataset.icono);
+    iconosVisibles.unobserve(e.target);
+  }), {root:cajonLista, rootMargin:'200px'});
+
+  function misApps(){
+    if (!Array.isArray(config.apps)) { config.apps = JSON.parse(NATIVA.appsSugeridas()); persist(CONF, config); }
+    return config.apps;
+  }
+  function renderCajon(){
+    $('cajonEditar').textContent = editando ? 'Listo' : 'Editar';
+    $('cajonBuscar').hidden = !editando;
+    if (editando) {
+      const q = $('cajonBuscar').value.trim().toLowerCase(), elegidas = misApps();
+      const filas = instaladas.filter(a => a.nombre.toLowerCase().includes(q));
+      cajonLista.innerHTML = filas.length ? filas.map(a => `<label class="app">
+        <img alt="" data-icono="${esc(a.paquete)}"><span>${esc(a.nombre)}</span>
+        <input type="checkbox" data-paquete="${esc(a.paquete)}" ${elegidas.includes(a.paquete) ? 'checked' : ''}>
+      </label>`).join('') : '<p class="cajon-vacio">No encontré esa aplicación.</p>';
+      cajonLista.querySelectorAll('img').forEach(img => iconosVisibles.observe(img));
+      return;
+    }
+    // Las que se desinstalaron dejan de aparecer.
+    const filas = misApps().map(p => instaladas.find(a => a.paquete === p)).filter(Boolean);
+    cajonLista.innerHTML = filas.length ? filas.map(a => `<button class="app" data-paquete="${esc(a.paquete)}">
+      <img alt="" src="${icono(a.paquete)}"><span>${esc(a.nombre)}</span>
+    </button>`).join('') : '<p class="cajon-vacio">Toca Editar para elegir tus aplicaciones.</p>';
+  }
+  if (NATIVA && NATIVA.appsInstaladas) {
+    $('openApps').hidden = false;
+    $('openApps').addEventListener('click', () => {
+      instaladas = JSON.parse(NATIVA.appsInstaladas());
+      editando = false; $('cajonBuscar').value = '';
+      renderCajon();
+      cajon.showModal();
+    });
+    $('cajonEditar').addEventListener('click', () => { editando = !editando; $('cajonBuscar').value = ''; renderCajon(); cajonLista.scrollTop = 0; });
+    $('cajonBuscar').addEventListener('input', renderCajon);
+    cajonLista.addEventListener('change', e => {
+      const c = e.target.closest('input[data-paquete]'); if (!c) return;
+      const p = c.dataset.paquete;
+      config.apps = c.checked ? [...misApps(), p] : misApps().filter(x => x !== p);
+      persist(CONF, config);
+    });
+    cajonLista.addEventListener('click', e => {
+      const b = e.target.closest('button[data-paquete]'); if (!b) return;
+      if (NATIVA.abrirApp(b.dataset.paquete)) cajon.close();
+      else toast('No pude abrir esa aplicación');
+    });
+    // Tocar fuera del panel lo cierra.
+    cajon.addEventListener('click', e => {
+      if (e.target !== cajon) return;
+      const r = cajon.getBoundingClientRect();
+      if (e.clientX > r.right) cajon.close();
+    });
+  }
+  // Botón Atrás del teléfono: cierra lo que esté abierto antes de salir.
+  window.bandejaAtras = () => {
+    const abierto = [cajon, dlg].find(d => d.open);
+    if (abierto) abierto.close();
+    return !!abierto;
+  };
 
   window.addEventListener('online', classifyPending);
 
